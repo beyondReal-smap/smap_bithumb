@@ -119,70 +119,37 @@ export default function Home() {
   const [bithumbLoading, setBithumbLoading] = useState(true);
 
   const fetchCryptoData = useCallback(async () => {
-    // 갱신 시작 시 거래소 로딩 상태 활성화
     setUpbitLoading(true);
     setBithumbLoading(true);
 
     try {
-      // 병렬로 모든 API 호출
-      const [coingeckoRes, bithumbRes, upbitRes] = await Promise.allSettled([
-        // CoinGecko API (글로벌 데이터)
-        fetch(
-          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${COINGECKO_IDS.join(
-            ","
-          )}&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
-        ),
-        // 빗썸 API
-        fetch("https://api.bithumb.com/public/ticker/ALL_KRW"),
-        // 업비트 API
-        fetch(
-          `https://api.upbit.com/v1/ticker?markets=${CRYPTO_LIST.map((c) => c.upbitMarket).join(",")}`
-        ),
-      ]);
+      const response = await fetch("/api/crypto");
+      if (!response.ok) throw new Error("네트워크 응답이 올바르지 않습니다.");
 
-      let coingeckoData = [];
-      let bithumbData = {};
-      let upbitData = [];
+      const data = await response.json();
+      const { coingecko, bithumb, upbit } = data;
 
-      // CoinGecko 데이터 파싱
-      if (coingeckoRes.status === "fulfilled" && coingeckoRes.value.ok) {
-        coingeckoData = await coingeckoRes.value.json();
-      }
-
-      // 빗썸 데이터 파싱
-      if (bithumbRes.status === "fulfilled" && bithumbRes.value.ok) {
-        const bithumbJson = await bithumbRes.value.json();
-        if (bithumbJson.status === "0000") {
-          bithumbData = bithumbJson.data;
-        }
-        setBithumbLoading(false);
-      } else {
-        setBithumbLoading(false);
-      }
-
-      // 업비트 데이터 파싱
-      if (upbitRes.status === "fulfilled" && upbitRes.value.ok) {
-        upbitData = await upbitRes.value.json();
-        setUpbitLoading(false);
-      } else {
-        setUpbitLoading(false);
-      }
+      // 업비트/빗썸 로딩 상태 해제
+      setUpbitLoading(false);
+      setBithumbLoading(false);
 
       // 데이터 통합
       const processedData = CRYPTO_LIST.map((crypto) => {
         // CoinGecko 데이터 찾기
-        const geckoInfo = coingeckoData.find((c) => c.id === crypto.id) || {};
+        const geckoInfo = Array.isArray(coingecko) ? coingecko.find((c) => c.id === crypto.id) || {} : {};
 
         // 빗썸 데이터 찾기
-        const bithumbInfo = bithumbData[crypto.bithumbSymbol] || {};
+        const bithumbInfo = bithumb[crypto.bithumbSymbol] || {};
         const bithumbVolume24h = parseFloat(bithumbInfo.acc_trade_value_24H) || 0;
 
         // 업비트 데이터 찾기
-        const upbitInfo = upbitData.find((u) => u.market === crypto.upbitMarket) || {};
+        const upbitInfo = Array.isArray(upbit) ? upbit.find((u) => u.market === crypto.upbitMarket) || {} : {};
         const upbitVolume24h = parseFloat(upbitInfo.acc_trade_price_24h) || 0;
 
-        // 한국 거래소 가격 (빗썸 기준)
-        const krwPrice = parseFloat(bithumbInfo.closing_price) || 0;
+        // 한국 거래소 가격 (빗썸 기준 우선, 없으면 업비트나 코인게코)
+        const krwPrice = parseFloat(bithumbInfo.closing_price) ||
+          parseFloat(upbitInfo.trade_price) || 0;
+
         const priceChange24h = parseFloat(bithumbInfo.fluctate_rate_24H) ||
           geckoInfo.price_change_percentage_24h || 0;
 
