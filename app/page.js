@@ -125,8 +125,13 @@ export default function Home() {
   const [bithumbLoading, setBithumbLoading] = useState(true);
 
   const fetchCryptoData = useCallback(async () => {
-    setUpbitLoading(true);
-    setBithumbLoading(true);
+    // 이미 데이터가 있다면 백그라운드에서 조용히 업데이트 (깜빡임 방지)
+    const isFirstLoad = cryptoData.length === 0;
+
+    if (isFirstLoad) {
+      setUpbitLoading(true);
+      setBithumbLoading(true);
+    }
 
     try {
       const response = await fetch("/api/crypto");
@@ -135,7 +140,7 @@ export default function Home() {
       const data = await response.json();
       const { coingecko, bithumb, upbit } = data;
 
-      // 업비트/빗썸 로딩 상태 해제
+      // 로딩 상태 해제
       setUpbitLoading(false);
       setBithumbLoading(false);
 
