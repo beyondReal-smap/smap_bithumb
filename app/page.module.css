@@ -629,24 +629,3 @@
   animation: shimmer 1.5s infinite;
   border-radius: 2px 2px 0 0;
 }
-
-/* Loading Dot Indicator */
-.loadingDot {
-  font-size: 8px;
-  color: var(--accent-primary);
-  animation: blink 1s infinite;
-  margin-left: 4px;
-}
-
-@keyframes blink {
-
-  0%,
-  50% {
-    opacity: 1;
-  }
-
-  51%,
-  100% {
-    opacity: 0.3;
-  }
-}

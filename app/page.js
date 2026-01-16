@@ -415,18 +415,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Exchange Legend */}
-      <div className={styles.exchangeLegend}>
-        <div className={styles.legendItem}>
-          <span className={styles.legendDotUpbit}></span>
-          업비트 {upbitLoading && <span className={styles.loadingDot}>●</span>}
-        </div>
-        <div className={styles.legendItem}>
-          <span className={styles.legendDotBithumb}></span>
-          빗썸 {bithumbLoading && <span className={styles.loadingDot}>●</span>}
-        </div>
-      </div>
-
       {/* Crypto Grid */}
       <div className={styles.cryptoGrid}>
         {cryptoData.map((coin) => (
