@@ -530,3 +530,75 @@
     justify-content: space-between;
   }
 }
+
+/* Skeleton Loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 25%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  display: inline-block;
+}
+
+.skeletonMarginTop {
+  margin-top: 8px;
+}
+
+.miniChartSkeleton {
+  height: 60px;
+  background: linear-gradient(to right,
+      transparent,
+      rgba(99, 102, 241, 0.1));
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.chartBarSkeleton {
+  flex: 1;
+  height: 20px;
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 25%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Loading Dot Indicator */
+.loadingDot {
+  font-size: 8px;
+  color: var(--accent-primary);
+  animation: blink 1s infinite;
+  margin-left: 4px;
+}
+
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0.3;
+  }
+}

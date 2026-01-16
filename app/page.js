@@ -72,6 +72,39 @@ const generateChartBars = (priceChange, coinId = "default") => {
   return bars;
 };
 
+// 스켈레톤 컴포넌트
+const Skeleton = ({ width, height, className = "" }) => (
+  <div
+    className={`${styles.skeleton} ${className}`}
+    style={{ width, height, borderRadius: "4px" }}
+  />
+);
+
+// 거래량 스켈레톤 컴포넌트
+const VolumeWithSkeleton = ({ value, isLoading, exchangeName }) => {
+  if (isLoading) {
+    return (
+      <div className={styles.volumeItem}>
+        <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
+          {exchangeName === "upbit" ? "업비트" : "빗썸"}
+        </span>
+        <Skeleton width="70px" height="16px" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.volumeItem}>
+      <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
+        {exchangeName === "upbit" ? "업비트" : "빗썸"}
+      </span>
+      <span className={styles.volumeValue}>
+        ₩{formatNumber(value)}
+      </span>
+    </div>
+  );
+};
+
 export default function Home() {
   const [cryptoData, setCryptoData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +113,15 @@ export default function Home() {
   const [totalMarketCap, setTotalMarketCap] = useState(0);
   const [total24hVolume, setTotal24hVolume] = useState(0);
 
+  // 거래소별 로딩 상태
+  const [upbitLoading, setUpbitLoading] = useState(true);
+  const [bithumbLoading, setBithumbLoading] = useState(true);
+
   const fetchCryptoData = useCallback(async () => {
+    // 갱신 시작 시 거래소 로딩 상태 활성화
+    setUpbitLoading(true);
+    setBithumbLoading(true);
+
     try {
       // 병렬로 모든 API 호출
       const [coingeckoRes, bithumbRes, upbitRes] = await Promise.allSettled([
@@ -113,11 +154,17 @@ export default function Home() {
         if (bithumbJson.status === "0000") {
           bithumbData = bithumbJson.data;
         }
+        setBithumbLoading(false);
+      } else {
+        setBithumbLoading(false);
       }
 
       // 업비트 데이터 파싱
       if (upbitRes.status === "fulfilled" && upbitRes.value.ok) {
         upbitData = await upbitRes.value.json();
+        setUpbitLoading(false);
+      } else {
+        setUpbitLoading(false);
       }
 
       // 데이터 통합
@@ -169,6 +216,8 @@ export default function Home() {
     } catch (err) {
       console.error("Error fetching crypto data:", err);
       setError(err.message);
+      setUpbitLoading(false);
+      setBithumbLoading(false);
     } finally {
       setLoading(false);
     }
@@ -183,9 +232,117 @@ export default function Home() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingSpinner}></div>
-          <p className={styles.loadingText}>실시간 데이터를 불러오는 중...</p>
+        {/* Header */}
+        <header className={styles.header}>
+          <div className={styles.headerBadge}>
+            <span className={styles.liveDot}></span>
+            실시간 업데이트
+          </div>
+          <h1 className={styles.title}>CryptoLive</h1>
+          <p className={styles.subtitle}>
+            주요 가상자산 8종의 실시간 시세 및 거래소별 거래량을 확인하세요
+          </p>
+        </header>
+
+        {/* Stats Bar Skeleton */}
+        <div className={styles.statsBar}>
+          <div className={styles.statItem}>
+            <div className={styles.statLabel}>총 시가총액</div>
+            <Skeleton width="100px" height="28px" />
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statLabel}>국내 24H 거래량</div>
+            <Skeleton width="100px" height="28px" />
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statLabel}>평균 변동률</div>
+            <Skeleton width="80px" height="28px" />
+          </div>
+          <div className={styles.statItem}>
+            <div className={styles.statLabel}>추적 종목</div>
+            <Skeleton width="50px" height="28px" />
+          </div>
+        </div>
+
+        {/* Exchange Legend */}
+        <div className={styles.exchangeLegend}>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDotUpbit}></span>
+            업비트
+          </div>
+          <div className={styles.legendItem}>
+            <span className={styles.legendDotBithumb}></span>
+            빗썸
+          </div>
+        </div>
+
+        {/* Crypto Grid Skeleton */}
+        <div className={styles.cryptoGrid}>
+          {CRYPTO_LIST.map((crypto) => (
+            <div key={crypto.id} className={styles.cryptoCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.coinInfo}>
+                  <div className={styles.coinIcon}>{crypto.icon}</div>
+                  <div className={styles.coinDetails}>
+                    <span className={styles.coinName}>{crypto.nameKo}</span>
+                    <span className={styles.coinSymbol}>{crypto.symbol}</span>
+                  </div>
+                </div>
+                <Skeleton width="70px" height="28px" />
+              </div>
+
+              <div className={styles.priceSection}>
+                <Skeleton width="150px" height="36px" />
+                <Skeleton width="100px" height="18px" className={styles.skeletonMarginTop} />
+              </div>
+
+              <div className={styles.miniChartSkeleton}>
+                {[...Array(24)].map((_, i) => (
+                  <div key={i} className={styles.chartBarSkeleton} />
+                ))}
+              </div>
+
+              {/* 거래소별 거래량 스켈레톤 */}
+              <div className={styles.exchangeVolumes}>
+                <div className={styles.volumeHeader}>24시간 거래량</div>
+                <div className={styles.volumeRow}>
+                  <div className={styles.volumeItem}>
+                    <span className={styles.exchangeBadgeUpbit}>업비트</span>
+                    <Skeleton width="70px" height="16px" />
+                  </div>
+                  <div className={styles.volumeItem}>
+                    <span className={styles.exchangeBadgeBithumb}>빗썸</span>
+                    <Skeleton width="70px" height="16px" />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.statsGrid}>
+                <div className={styles.statBox}>
+                  <div className={styles.statBoxLabel}>시가총액</div>
+                  <Skeleton width="80px" height="16px" />
+                </div>
+                <div className={styles.statBox}>
+                  <div className={styles.statBoxLabel}>글로벌 거래량</div>
+                  <Skeleton width="80px" height="16px" />
+                </div>
+                <div className={styles.statBox}>
+                  <div className={styles.statBoxLabel}>24H 최고가</div>
+                  <Skeleton width="80px" height="16px" />
+                </div>
+                <div className={styles.statBox}>
+                  <div className={styles.statBoxLabel}>24H 최저가</div>
+                  <Skeleton width="80px" height="16px" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Update Info */}
+        <div className={styles.updateInfo}>
+          <span className={styles.updateDot}></span>
+          데이터 로딩 중...
         </div>
       </div>
     );
@@ -255,11 +412,11 @@ export default function Home() {
       <div className={styles.exchangeLegend}>
         <div className={styles.legendItem}>
           <span className={styles.legendDotUpbit}></span>
-          업비트
+          업비트 {upbitLoading && <span className={styles.loadingDot}>●</span>}
         </div>
         <div className={styles.legendItem}>
           <span className={styles.legendDotBithumb}></span>
-          빗썸
+          빗썸 {bithumbLoading && <span className={styles.loadingDot}>●</span>}
         </div>
       </div>
 
@@ -319,22 +476,20 @@ export default function Home() {
               ))}
             </div>
 
-            {/* 거래소별 거래량 */}
+            {/* 거래소별 거래량 - 스켈레톤 포함 */}
             <div className={styles.exchangeVolumes}>
               <div className={styles.volumeHeader}>24시간 거래량</div>
               <div className={styles.volumeRow}>
-                <div className={styles.volumeItem}>
-                  <span className={styles.exchangeBadgeUpbit}>업비트</span>
-                  <span className={styles.volumeValue}>
-                    ₩{formatNumber(coin.upbitVolume24h)}
-                  </span>
-                </div>
-                <div className={styles.volumeItem}>
-                  <span className={styles.exchangeBadgeBithumb}>빗썸</span>
-                  <span className={styles.volumeValue}>
-                    ₩{formatNumber(coin.bithumbVolume24h)}
-                  </span>
-                </div>
+                <VolumeWithSkeleton
+                  value={coin.upbitVolume24h}
+                  isLoading={upbitLoading}
+                  exchangeName="upbit"
+                />
+                <VolumeWithSkeleton
+                  value={coin.bithumbVolume24h}
+                  isLoading={bithumbLoading}
+                  exchangeName="bithumb"
+                />
               </div>
             </div>
 
