@@ -219,7 +219,7 @@ export default function Home() {
     if (!mounted) return;
 
     fetchCryptoData();
-    const interval = setInterval(fetchCryptoData, 5000);
+    const interval = setInterval(fetchCryptoData, 30000);
     return () => clearInterval(interval);
   }, [fetchCryptoData, mounted]);
 
@@ -556,7 +556,7 @@ export default function Home() {
             second: "2-digit",
           })
           : "-"}{" "}
-        (5초마다 자동 갱신)
+        (30초마다 자동 갱신)
       </div>
     </div>
   );
