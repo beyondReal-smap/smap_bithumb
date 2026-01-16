@@ -112,6 +112,7 @@ export default function Home() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [totalMarketCap, setTotalMarketCap] = useState(0);
   const [total24hVolume, setTotal24hVolume] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   // 거래소별 로딩 상태
   const [upbitLoading, setUpbitLoading] = useState(true);
@@ -223,11 +224,36 @@ export default function Home() {
     }
   }, []);
 
+  // 클라이언트 마운트 후에만 데이터 fetch (hydration 오류 방지)
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     fetchCryptoData();
     const interval = setInterval(fetchCryptoData, 5000);
     return () => clearInterval(interval);
-  }, [fetchCryptoData]);
+  }, [fetchCryptoData, mounted]);
+
+  // 서버 사이드 렌더링 시 빈 컨테이너 반환 (hydration 오류 방지)
+  if (!mounted) {
+    return (
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <div className={styles.headerBadge}>
+            <span className={styles.liveDot}></span>
+            실시간 업데이트
+          </div>
+          <h1 className={styles.title}>CryptoLive</h1>
+          <p className={styles.subtitle}>
+            주요 가상자산 8종의 실시간 시세 및 거래소별 거래량을 확인하세요
+          </p>
+        </header>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
