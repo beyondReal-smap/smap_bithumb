@@ -81,13 +81,16 @@ const Skeleton = ({ width, height, className = "" }) => (
 );
 
 // 거래량 스켈레톤 컴포넌트
-const VolumeWithSkeleton = ({ value, isLoading, exchangeName }) => {
+const VolumeWithSkeleton = ({ value, share, isLoading, exchangeName }) => {
   if (isLoading) {
     return (
       <div className={styles.volumeItem}>
-        <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
-          {exchangeName === "upbit" ? "업비트" : "빗썸"}
-        </span>
+        <div className={styles.volumeTop}>
+          <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
+            {exchangeName === "upbit" ? "업비트" : "빗썸"}
+          </span>
+          <Skeleton width="40px" height="12px" />
+        </div>
         <Skeleton width="70px" height="16px" />
       </div>
     );
@@ -95,9 +98,12 @@ const VolumeWithSkeleton = ({ value, isLoading, exchangeName }) => {
 
   return (
     <div className={styles.volumeItem}>
-      <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
-        {exchangeName === "upbit" ? "업비트" : "빗썸"}
-      </span>
+      <div className={styles.volumeTop}>
+        <span className={exchangeName === "upbit" ? styles.exchangeBadgeUpbit : styles.exchangeBadgeBithumb}>
+          {exchangeName === "upbit" ? "업비트" : "빗썸"}
+        </span>
+        <span className={styles.shareValue}>{share.toFixed(1)}%</span>
+      </div>
       <span className={styles.volumeValue}>
         ₩{formatNumber(value)}
       </span>
@@ -153,6 +159,11 @@ export default function Home() {
         const priceChange24h = parseFloat(bithumbInfo.fluctate_rate_24H) ||
           geckoInfo.price_change_percentage_24h || 0;
 
+        const totalKrVolume = bithumbVolume24h + upbitVolume24h;
+        const upbitShare = totalKrVolume > 0 ? (upbitVolume24h / totalKrVolume) * 100 : 0;
+        const bithumbShare = totalKrVolume > 0 ? (bithumbVolume24h / totalKrVolume) * 100 : 0;
+        const bithumbToUpbitRatio = upbitVolume24h > 0 ? (bithumbVolume24h / upbitVolume24h) * 100 : 0;
+
         return {
           id: crypto.id,
           name: geckoInfo.name || crypto.symbol,
@@ -167,7 +178,10 @@ export default function Home() {
           // 거래소별 거래량
           bithumbVolume24h: bithumbVolume24h,
           upbitVolume24h: upbitVolume24h,
-          totalKrVolume24h: bithumbVolume24h + upbitVolume24h,
+          totalKrVolume24h: totalKrVolume,
+          upbitShare: upbitShare,
+          bithumbShare: bithumbShare,
+          bithumbToUpbitRatio: bithumbToUpbitRatio,
           // 글로벌 거래량
           globalVolume24h: geckoInfo.total_volume || 0,
           high24h: parseFloat(bithumbInfo.max_price) || geckoInfo.high_24h || 0,
@@ -471,19 +485,41 @@ export default function Home() {
 
             {/* 거래소별 거래량 - 스켈레톤 포함 */}
             <div className={styles.exchangeVolumes}>
-              <div className={styles.volumeHeader}>24시간 거래량</div>
+              <div className={styles.volumeHeader}>
+                <span>24시간 거래량</span>
+                {!upbitLoading && !bithumbLoading && (
+                  <span className={styles.ratioText}>
+                    업비트 대비 빗썸: {coin.bithumbToUpbitRatio.toFixed(1)}%
+                  </span>
+                )}
+              </div>
               <div className={styles.volumeRow}>
                 <VolumeWithSkeleton
                   value={coin.upbitVolume24h}
+                  share={coin.upbitShare}
                   isLoading={upbitLoading}
                   exchangeName="upbit"
                 />
                 <VolumeWithSkeleton
                   value={coin.bithumbVolume24h}
+                  share={coin.bithumbShare}
                   isLoading={bithumbLoading}
                   exchangeName="bithumb"
                 />
               </div>
+              {/* 비율 바 시각화 */}
+              {!upbitLoading && !bithumbLoading && (
+                <div className={styles.ratioBarContainer}>
+                  <div
+                    className={styles.ratioBarUpbit}
+                    style={{ width: `${coin.upbitShare}%` }}
+                  />
+                  <div
+                    className={styles.ratioBarBithumb}
+                    style={{ width: `${coin.bithumbShare}%` }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className={styles.statsGrid}>
